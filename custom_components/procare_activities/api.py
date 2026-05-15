@@ -217,9 +217,41 @@ class ProcareApi:
                 elif activity_type == "meal" and data:
                     title = f"Meal: {data.get('type', 'Meal')}"
                     details = f"{data.get('desc', '')} ({data.get('quantity', '')})".strip()
-                elif activity_type == "nap" and data and data.get('start_time'):
-                    start_time = datetime.fromisoformat(data['start_time']).strftime("%-I:%M %p")
-                    title = f"Nap Started at {start_time}"
+                elif activity_type == "nap" and data:
+                    start_time_str = data.get('start_time')
+                    end_time_str = data.get('end_time')
+                    if end_time_str:
+                        end_dt = datetime.fromisoformat(end_time_str)
+                        title = f"Nap Ended at {end_dt.strftime('%-I:%M %p')}"
+                        if start_time_str:
+                            start_dt = datetime.fromisoformat(start_time_str)
+                            total_minutes = int((end_dt - start_dt).total_seconds() // 60)
+                            hours, minutes = divmod(total_minutes, 60)
+                            if hours and minutes:
+                                duration = f"{hours}h {minutes}m"
+                            elif hours:
+                                duration = f"{hours}h"
+                            else:
+                                duration = f"{minutes}m"
+                            details = f"Started {start_dt.strftime('%-I:%M %p')} ({duration})"
+                    elif start_time_str:
+                        start_dt = datetime.fromisoformat(start_time_str)
+                        title = f"Nap Started at {start_dt.strftime('%-I:%M %p')}"
+                elif activity_type == "bottle" and data:
+                    quantity = data.get('quantity')
+                    unit = (
+                        data.get('quantity_unit')
+                        or data.get('measurement')
+                        or data.get('unit')
+                        or "oz"
+                    )
+                    if quantity not in (None, ""):
+                        title = f"Bottle: {quantity} {unit}".strip()
+                    else:
+                        title = "Bottle"
+                    food_type = data.get('food_type') or data.get('type')
+                    if food_type:
+                        details = food_type
                 elif activity_type == "bathroom" and data:
                     title = f"Diaper: {data.get('sub_type', 'check')}"
 
