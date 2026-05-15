@@ -220,38 +220,36 @@ class ProcareApi:
                 elif activity_type == "nap" and data:
                     start_time_str = data.get('start_time')
                     end_time_str = data.get('end_time')
-                    if end_time_str:
+                    if end_time_str and start_time_str:
+                        start_dt = datetime.fromisoformat(start_time_str)
+                        end_dt = datetime.fromisoformat(end_time_str)
+                        total_minutes = int((end_dt - start_dt).total_seconds() // 60)
+                        hours, minutes = divmod(total_minutes, 60)
+                        if hours and minutes:
+                            duration = f"{hours}h {minutes}m"
+                        elif hours:
+                            duration = f"{hours}h"
+                        else:
+                            duration = f"{minutes}m"
+                        title = (
+                            f"Nap from {start_dt.strftime('%-I:%M %p')} "
+                            f"to {end_dt.strftime('%-I:%M %p')} ({duration})"
+                        )
+                    elif end_time_str:
                         end_dt = datetime.fromisoformat(end_time_str)
                         title = f"Nap Ended at {end_dt.strftime('%-I:%M %p')}"
-                        if start_time_str:
-                            start_dt = datetime.fromisoformat(start_time_str)
-                            total_minutes = int((end_dt - start_dt).total_seconds() // 60)
-                            hours, minutes = divmod(total_minutes, 60)
-                            if hours and minutes:
-                                duration = f"{hours}h {minutes}m"
-                            elif hours:
-                                duration = f"{hours}h"
-                            else:
-                                duration = f"{minutes}m"
-                            details = f"Started {start_dt.strftime('%-I:%M %p')} ({duration})"
                     elif start_time_str:
                         start_dt = datetime.fromisoformat(start_time_str)
                         title = f"Nap Started at {start_dt.strftime('%-I:%M %p')}"
                 elif activity_type == "bottle" and data:
-                    quantity = data.get('quantity')
-                    unit = (
-                        data.get('quantity_unit')
-                        or data.get('measurement')
-                        or data.get('unit')
-                        or "oz"
-                    )
-                    if quantity not in (None, ""):
-                        title = f"Bottle: {quantity} {unit}".strip()
+                    amount = data.get('amount')
+                    if amount not in (None, ""):
+                        title = f"Bottle: {amount} oz"
                     else:
                         title = "Bottle"
-                    food_type = data.get('food_type') or data.get('type')
-                    if food_type:
-                        details = food_type
+                    desc = data.get('desc')
+                    if desc:
+                        details = desc
                 elif activity_type == "bathroom" and data:
                     title = f"Diaper: {data.get('sub_type', 'check')}"
 
