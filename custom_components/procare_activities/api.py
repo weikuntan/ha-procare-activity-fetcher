@@ -221,6 +221,8 @@ class ProcareApi:
                     start_time_str = data.get('start_time')
                     end_time_str = data.get('end_time')
                     if end_time_str and start_time_str:
+                        start_dt = datetime.fromisoformat(start_time_str)
+                        end_dt = datetime.fromisoformat(end_time_str)
                         title = (
                             f"Slept from {start_dt.strftime('%-I:%M %p')} "
                             f"to {end_dt.strftime('%-I:%M %p')}"
