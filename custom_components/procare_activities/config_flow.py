@@ -6,8 +6,20 @@ import aiohttp
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD
+from homeassistant.helpers import selector
 
-from .const import DOMAIN, CONF_SCHOOL_NAME, CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL
+from .const import (
+    DOMAIN,
+    CONF_SCHOOL_NAME,
+    CONF_UPDATE_INTERVAL,
+    CONF_AFTER_HOURS_INTERVAL,
+    CONF_OPERATING_START,
+    CONF_OPERATING_END,
+    DEFAULT_UPDATE_INTERVAL,
+    DEFAULT_AFTER_HOURS_INTERVAL,
+    DEFAULT_OPERATING_START,
+    DEFAULT_OPERATING_END,
+)
 from .api import ProcareApi, ProcareApiError, ProcareAuthError, ProcareNoChildrenError
 
 _LOGGER = logging.getLogger(__name__)
@@ -113,21 +125,34 @@ class ProcareConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class ProcareOptionsFlow(config_entries.OptionsFlow):
     """Handle options for Procare Activities."""
 
+    def _current(self, key, default):
+        return self.config_entry.options.get(
+            key, self.config_entry.data.get(key, default)
+        )
+
     async def async_step_init(self, user_input=None):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        current = self.config_entry.options.get(
-            CONF_UPDATE_INTERVAL,
-            self.config_entry.data.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL),
-        )
-
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema({
-                vol.Required(CONF_UPDATE_INTERVAL, default=current): vol.All(
-                    vol.Coerce(int), vol.Range(min=5, max=120)
-                ),
+                vol.Required(
+                    CONF_UPDATE_INTERVAL,
+                    default=self._current(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL),
+                ): vol.All(vol.Coerce(int), vol.Range(min=5, max=120)),
+                vol.Required(
+                    CONF_AFTER_HOURS_INTERVAL,
+                    default=self._current(CONF_AFTER_HOURS_INTERVAL, DEFAULT_AFTER_HOURS_INTERVAL),
+                ): vol.All(vol.Coerce(int), vol.Range(min=5, max=720)),
+                vol.Required(
+                    CONF_OPERATING_START,
+                    default=self._current(CONF_OPERATING_START, DEFAULT_OPERATING_START),
+                ): selector.TimeSelector(),
+                vol.Required(
+                    CONF_OPERATING_END,
+                    default=self._current(CONF_OPERATING_END, DEFAULT_OPERATING_END),
+                ): selector.TimeSelector(),
             }),
         )
 
