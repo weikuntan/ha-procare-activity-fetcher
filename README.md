@@ -66,6 +66,18 @@ The integration creates a sensor named `sensor.<child_name>_activities`.
 
 You can use this data to create automations or display it in your Home Assistant dashboard.
 
+## Timeline Card
+
+The integration ships a custom Lovelace card (`procare-timeline-card`) and auto-registers it on startup — no manual resource registration or `www/` file copy required. Once the integration is loaded, hard-refresh your browser and add the card to a dashboard:
+
+```yaml
+type: custom:procare-timeline-card
+entity: sensor.<your_child>_latest_activity
+header: Daycare Timeline
+number_of_events: 10
+date_format: monthddyy
+```
+
 ## Contributing
 
 Contributions are welcome! If you have any ideas, suggestions, or bug reports, please open an issue or submit a pull request.

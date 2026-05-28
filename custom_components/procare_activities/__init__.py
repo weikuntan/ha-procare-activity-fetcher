@@ -1,9 +1,12 @@
 """The Procare Activities integration."""
 import asyncio
+import json
 import logging
 from datetime import time, timedelta
+from pathlib import Path
 import aiohttp
 
+from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -27,6 +30,40 @@ from .api import ProcareApi, ProcareApiError, ProcareAuthError
 
 _LOGGER = logging.getLogger(__name__)
 
+CARD_FILENAME = "procare-timeline-card.js"
+CARD_URL_PATH = f"/{DOMAIN}/{CARD_FILENAME}"
+CARD_REGISTERED_KEY = f"{DOMAIN}_card_registered"
+
+
+async def _register_timeline_card(hass: HomeAssistant) -> None:
+    """Serve the Lovelace card from the integration and inject it on every page."""
+    if hass.data.get(CARD_REGISTERED_KEY):
+        return
+    hass.data[CARD_REGISTERED_KEY] = True
+
+    card_path = Path(__file__).parent / CARD_FILENAME
+    if not card_path.is_file():
+        _LOGGER.warning("Timeline card file missing at %s; skipping auto-registration", card_path)
+        return
+
+    try:
+        manifest = json.loads((Path(__file__).parent / "manifest.json").read_text())
+        version = manifest.get("version", "0")
+    except Exception:
+        version = "0"
+
+    try:
+        from homeassistant.components.http import StaticPathConfig
+        await hass.http.async_register_static_paths([
+            StaticPathConfig(CARD_URL_PATH, str(card_path), False)
+        ])
+    except ImportError:
+        # Older HA cores: synchronous API.
+        hass.http.register_static_path(CARD_URL_PATH, str(card_path), False)
+
+    add_extra_js_url(hass, f"{CARD_URL_PATH}?v={version}")
+    _LOGGER.info("Procare timeline card auto-registered at %s", CARD_URL_PATH)
+
 
 def _opt(entry: ConfigEntry, key: str, default):
     return entry.options.get(key, entry.data.get(key, default))
@@ -41,6 +78,7 @@ def _parse_time(value) -> time:
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Procare Activities from a config entry."""
     hass.data.setdefault(DOMAIN, {})
+    await _register_timeline_card(hass)
     
     username = entry.data["username"]
     password = entry.data["password"]

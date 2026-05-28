@@ -210,17 +210,21 @@ export class ProcareTimelineCardEditor extends LitElement {
     }
 }
 
-customElements.define("procare-timeline-card-editor", ProcareTimelineCardEditor);
+if (!customElements.get("procare-timeline-card-editor")) {
+  customElements.define("procare-timeline-card-editor", ProcareTimelineCardEditor);
+}
 
 // =============================
 // Card registration
 // =============================
 window.customCards = window.customCards || [];
-window.customCards.push({
-  type: 'procare-timeline-card',
-  name: 'Procare Timeline Card',
-  description: 'A timeline card to display Procare activities.',
-});
+if (!window.customCards.some(c => c.type === 'procare-timeline-card')) {
+  window.customCards.push({
+    type: 'procare-timeline-card',
+    name: 'Procare Timeline Card',
+    description: 'A timeline card to display Procare activities.',
+  });
+}
 
 
 // =============================
@@ -390,5 +394,7 @@ class ProcareTimelineCard extends HTMLElement {
   }
 }
 
-customElements.define('procare-timeline-card', ProcareTimelineCard);
+if (!customElements.get('procare-timeline-card')) {
+  customElements.define('procare-timeline-card', ProcareTimelineCard);
+}
 
